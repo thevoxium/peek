@@ -1,11 +1,15 @@
 #include <ncurses.h>
+#include <utility>
 #include <vector>
 #include <string>
 #include <unistd.h>
 #include <limits.h>
 #include <sys/stat.h>
 #include <cstdio>
+#include <locale.h>
 #include "utils.h"
+
+#define SUBSTR_LEN 40
 
 bool isValidPath(const std::string& path) {
     struct stat buffer;
@@ -32,6 +36,8 @@ int main(int argc, char* argv[]){
       fprintf(stderr, "Usage: %s [<directory_path>]\n", argv[0]);
       return 1;
   }
+
+  setlocale(LC_ALL, "");
   initscr();             
   noecho();              
   cbreak();              
@@ -41,7 +47,7 @@ int main(int argc, char* argv[]){
 
   int selectedIndex = 0;
   int topIndex = 0;
-  std::vector<std::string> currentFiles;
+  std::vector<std::pair<std::string, bool>> currentFiles;
   std::string currentPath = initialPath;
 
   int ch;
@@ -61,7 +67,12 @@ int main(int argc, char* argv[]){
         if ((int)i == selectedIndex) {
             attron(A_REVERSE);
         }
-        mvprintw(row, 1, "%s", currentFiles[i].c_str());
+
+        if(currentFiles[i].second == true){
+          mvprintw(row, 1, "%s", ("🗂️"+currentFiles[i].first.substr(0, SUBSTR_LEN)).c_str());
+        }else{
+          mvprintw(row, 1, "%s", (currentFiles[i].first.substr(0, SUBSTR_LEN)).c_str());
+        }
         if ((int)i == selectedIndex) {
             attroff(A_REVERSE);
         }
