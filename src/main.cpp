@@ -24,13 +24,13 @@ int main(int argc, char* argv[]){
           initialPath = cwd_buffer;
       } else {
           perror("peek: Error getting current working directory");
-          return 1; // Exit if CWD cannot be determined
+          return 1;
       }
   } else if (argc == 2) {
       initialPath = argv[1];
       if (!isValidPath(initialPath)) {
           fprintf(stderr, "peek: Invalid path: %s\n", initialPath.c_str());
-          return 1; // Exit if path is invalid
+          return 1;
       }
   } else {
       fprintf(stderr, "Usage: %s [<directory_path>]\n", argv[0]);
@@ -38,22 +38,21 @@ int main(int argc, char* argv[]){
   }
 
   setlocale(LC_ALL, "");
-  initscr();             
-  noecho();              
-  cbreak();              
-  keypad(stdscr, TRUE);  
-  curs_set(0);           
+  initscr();
+  noecho();
+  cbreak();
+  keypad(stdscr, TRUE);
+  curs_set(0);
 
 
   int selectedIndex = 0;
   int topIndex = 0;
   std::vector<std::pair<std::string, bool>> currentFiles;
   std::string currentPath = initialPath;
-
+  currentFiles = getDirectoryContents(currentPath);
   int ch;
   while(true){
 
-    currentFiles = getDirectoryContents(currentPath);
 
     if (selectedIndex < 0) selectedIndex = 0;
     if (!currentFiles.empty() && selectedIndex >= currentFiles.size()) selectedIndex = currentFiles.size()-1;
@@ -62,7 +61,7 @@ int main(int argc, char* argv[]){
 
     mvprintw(0, 1, "%s", ("CWD: "+currentPath).c_str());
 
-    int row = 1; 
+    int row = 1;
     for (size_t i = topIndex; i < currentFiles.size() && row < LINES - 1; ++i, ++row) {
         if ((int)i == selectedIndex) {
             attron(A_REVERSE);
@@ -71,18 +70,55 @@ int main(int argc, char* argv[]){
         if(currentFiles[i].second == true){
           mvprintw(row, 1, "%s", ("🗂️"+currentFiles[i].first.substr(0, SUBSTR_LEN)).c_str());
         }else{
-          mvprintw(row, 1, "%s", (currentFiles[i].first.substr(0, SUBSTR_LEN)).c_str());
+          mvprintw(row, 1, "%s", ("📄"+currentFiles[i].first.substr(0, SUBSTR_LEN)).c_str());
         }
         if ((int)i == selectedIndex) {
+             int current_col = 1 + 2 + currentFiles[i].first.substr(0, SUBSTR_LEN).length();
+             while(current_col < COLS) {
+                 mvaddch(row, current_col++, ' ');
+             }
             attroff(A_REVERSE);
         }
     }
+
+
+    int term_height = LINES;
+    int term_width = COLS;
+    int statusBarRow = term_height - 1;
+    std::string fullPathStatus;
+
+    if (!currentFiles.empty() && selectedIndex >= 0 && selectedIndex < (int)currentFiles.size()) {
+        if (currentPath == "/") {
+            fullPathStatus = currentPath + currentFiles[selectedIndex].first;
+        } else {
+            fullPathStatus = currentPath + "/" + currentFiles[selectedIndex].first;
+        }
+    } else {
+        fullPathStatus = currentPath;
+        if (!fullPathStatus.empty() && fullPathStatus.back() != '/') {
+            fullPathStatus += "/";
+        }
+         if (currentFiles.empty()) {
+             fullPathStatus += " (empty)";
+         }
+    }
+
+    attron(A_REVERSE);
+    move(statusBarRow, 0);
+    clrtoeol();
+    mvprintw(statusBarRow, 0, "%.*s", term_width, fullPathStatus.c_str());
+    int printedLen = fullPathStatus.length() > (size_t)term_width ? term_width : fullPathStatus.length();
+    for (int k = printedLen; k < term_width; ++k) {
+        mvaddch(statusBarRow, k, ' ');
+    }
+    attroff(A_REVERSE);
+
 
     refresh();
 
     ch = getch();
     if (ch == 'q') {
-        break; // Exit the loop
+        break;
     } else if (ch == KEY_UP) {
         if (selectedIndex > 0) {
             selectedIndex--;
@@ -94,11 +130,11 @@ int main(int argc, char* argv[]){
         if (!currentFiles.empty() && selectedIndex < (int)currentFiles.size() - 1) {
             selectedIndex++;
             if (selectedIndex >= topIndex + LINES - 2) {
-                topIndex = selectedIndex - LINES + 2;
+                 topIndex = selectedIndex - LINES + 3; // Adjusted slightly for status bar
+                 if (topIndex < 0) topIndex = 0;
             }
         }
     }
-
   }
 
   endwin();
