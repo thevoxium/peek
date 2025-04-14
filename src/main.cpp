@@ -48,7 +48,8 @@ return 1;
   cbreak();
   if (has_colors()) {
       start_color();
-      init_pair(1, COLOR_RED, COLOR_BLACK);
+      use_default_colors();
+      init_pair(1, COLOR_RED, -1);
   }
 
   keypad(stdscr, TRUE);
@@ -81,7 +82,7 @@ return 1;
           if (inDeleteMode) {
               attron(COLOR_PAIR(1) | A_REVERSE);
           } else {
-              attron(A_REVERSE);
+              attron(A_REVERSE | A_DIM);
           }
       }
         if(currentFiles[i].second == true){
@@ -120,7 +121,7 @@ return 1;
          }
     }
 
-    attron(A_REVERSE);
+    attron(A_REVERSE | A_DIM);
     move(statusBarRow, 0);
     clrtoeol();
     mvprintw(statusBarRow, 0, "%.*s", term_width, fullPathStatus.c_str());
@@ -128,7 +129,7 @@ return 1;
     for (int k = printedLen; k < term_width; ++k) {
         mvaddch(statusBarRow, k, ' ');
     }
-    attroff(A_REVERSE);
+    attroff(A_REVERSE | A_DIM);
 
 
     refresh();
