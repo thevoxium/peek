@@ -1,3 +1,4 @@
+#include <exception>
 #include <ncurses.h>
 #include <utility>
 #include <vector>
@@ -8,8 +9,12 @@
 #include <cstdio>
 #include <locale.h>
 #include "utils.h"
+#include <filesystem>
+
 
 #define SUBSTR_LEN 40
+
+namespace fs = std::filesystem;
 
 bool isValidPath(const std::string& path) {
     struct stat buffer;
@@ -34,19 +39,25 @@ int main(int argc, char* argv[]){
       }
   } else {
       fprintf(stderr, "Usage: %s [<directory_path>]\n", argv[0]);
-      return 1;
+return 1;
   }
 
   setlocale(LC_ALL, "");
   initscr();
   noecho();
   cbreak();
+  if (has_colors()) {
+      start_color();
+      init_pair(1, COLOR_RED, COLOR_BLACK);
+  }
+
   keypad(stdscr, TRUE);
   curs_set(0);
 
 
   int selectedIndex = 0;
   int topIndex = 0;
+  bool inDeleteMode = false;
   std::vector<std::pair<std::string, bool>> currentFiles;
   std::string currentPath = initialPath;
   currentFiles = getDirectoryContents(currentPath);
@@ -61,12 +72,18 @@ int main(int argc, char* argv[]){
 
     mvprintw(0, 1, "%s", ("CWD: "+currentPath).c_str());
 
+
+
     int row = 1;
     for (size_t i = topIndex; i < currentFiles.size() && row < LINES - 1; ++i, ++row) {
-        if ((int)i == selectedIndex) {
-            attron(A_REVERSE);
-        }
 
+     if ((int)i == selectedIndex) {
+          if (inDeleteMode) {
+              attron(COLOR_PAIR(1) | A_REVERSE);
+          } else {
+              attron(A_REVERSE);
+          }
+      }
         if(currentFiles[i].second == true){
           mvprintw(row, 1, "%s", ("🗂️"+currentFiles[i].first.substr(0, SUBSTR_LEN)).c_str());
         }else{
@@ -134,6 +151,42 @@ int main(int argc, char* argv[]){
                  if (topIndex < 0) topIndex = 0;
             }
         }
+    } else if (ch == 'd'){
+      if (!currentFiles.empty() && selectedIndex < (int)currentFiles.size()){
+        std::string confirmMsg = "Delete?";
+        mvprintw(selectedIndex-topIndex+1, 50, "%s", confirmMsg.c_str());
+        refresh();
+
+        inDeleteMode = true;
+
+        int confirm = getch();
+        if(confirm == 'y' || confirm == 'Y'){
+          try{
+            std::string fullPath = currentPath == "/" ? 
+                        currentPath + currentFiles[selectedIndex].first :
+                        currentPath + "/" + currentFiles[selectedIndex].first;
+
+            if (currentFiles[selectedIndex].second){
+              fs::remove_all(fullPath);
+            }else{
+              fs::remove(fullPath);
+            }
+            currentFiles = getDirectoryContents(currentPath);
+            if(selectedIndex >= (int)currentFiles.size()){
+              selectedIndex = currentFiles.size()-1;
+            }
+            inDeleteMode = false;
+          } catch(const std::exception& e){
+             mvprintw(LINES/2 + 1, (COLS-30)/2, "Error: Could not delete file, press any key!");
+             inDeleteMode = false;
+             refresh();
+
+             getch(); 
+          }
+        }else{
+          inDeleteMode = false;
+        }
+      }
     }
   }
 
