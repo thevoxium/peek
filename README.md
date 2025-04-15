@@ -1,7 +1,7 @@
 
 # peek
 
-![peek demo](assets/img.gif)
+![peek demo](https://media.githubusercontent.com/media/thevoxium/peek/refs/heads/main/assets/img.gif)
 
 A lightweight, fast terminal file browser.
 
