@@ -157,6 +157,20 @@ int main(int argc, char *argv[]) {
       // default color
       printw("%s", displayName.substr(0, SUBSTR_LEN).c_str());
 
+      if (!currentFiles[i].second) {
+        std::string fullPath = currentPath == "/"
+                                   ? currentPath + displayName
+                                   : currentPath + "/" + displayName;
+        std::string modTime = getFormattedModTime(fullPath);
+        if (!modTime.empty()) {
+
+          move(row, COLS - modTime.length() - 2); // Right-align with padding
+          attron(COLOR_PAIR(PAIR_DIRECTORY) | A_DIM);
+          printw("%s", modTime.c_str());
+          attroff(COLOR_PAIR(PAIR_DIRECTORY) | A_DIM);
+        }
+      }
+
       // Fill rest of selected line & turn off selection attributes
       if (isSelected) {
         int iconVisualWidth = 2;
