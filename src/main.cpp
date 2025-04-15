@@ -61,7 +61,7 @@ return 1;
   bool inDeleteMode = false;
   std::vector<std::pair<std::string, bool>> currentFiles;
   std::string currentPath = initialPath;
-  currentFiles = getDirectoryContents(currentPath);
+currentFiles = getDirectoryContents(currentPath);
   int ch;
   while(true){
 
@@ -186,6 +186,44 @@ return 1;
           }
         }else{
           inDeleteMode = false;
+        }
+      }
+    } else if (ch == 'r'){
+      if (!currentFiles.empty() && selectedIndex < (int)currentFiles.size()){
+        std::string confirmMsg = "Rename?";
+        mvprintw(selectedIndex-topIndex+1, 50, "%s", confirmMsg.c_str());
+        refresh();
+
+        int confirm = getch();
+        if(confirm == 'y' || confirm == 'Y'){
+          echo(); // Enable echo to see user input
+          curs_set(1); // Show cursor for input
+          mvprintw(selectedIndex-topIndex+2, 50, "New name: ");
+          refresh();
+
+          char newName[256];
+          getnstr(newName, sizeof(newName)-1);
+          noecho(); // Disable echo again
+          curs_set(0); // Hide cursor
+
+          try{
+            std::string fullOldPath = currentPath == "/" ? 
+                        currentPath + currentFiles[selectedIndex].first :
+                        currentPath + "/" + currentFiles[selectedIndex].first;
+            std::string fullNewPath = currentPath == "/" ? 
+                        currentPath + newName :
+                        currentPath + "/" + newName;
+
+            fs::rename(fullOldPath, fullNewPath);
+            currentFiles = getDirectoryContents(currentPath);
+            if(selectedIndex >= (int)currentFiles.size()){
+              selectedIndex = currentFiles.size()-1;
+            }
+          } catch(const std::exception& e){
+             mvprintw(LINES/2 + 1, (COLS-30)/2, "Error: Could not rename, press any key!");
+             refresh();
+             getch();
+          }
         }
       }
     }
