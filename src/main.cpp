@@ -11,7 +11,7 @@
 #include <utility>
 #include <vector>
 
-#define SUBSTR_LEN 100
+#define SUBSTR_LEN COLS / 2
 
 bool isValidPath(const std::string &path) {
   struct stat buffer;
@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) {
         int current_col =
             1 + iconVisualWidth + displayName.substr(0, SUBSTR_LEN).length();
         // The selectionAttrs are already on, just fill
-        while (current_col < COLS) {
+        while (current_col < COLS / 2) {
           mvaddch(row, current_col++, ' ');
         }
         attroff(selectionAttrs); // Turn off selection highlight after filling
