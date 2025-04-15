@@ -1,7 +1,7 @@
 
 # peek
 
-![peek demo](assets/img.png)
+![peek demo](assets/img.gif)
 
 A lightweight, fast terminal file browser.
 

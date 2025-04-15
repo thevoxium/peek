@@ -202,10 +202,11 @@ int main(int argc, char *argv[]) {
       }
     } else if (ch == 'r') {
       handleRenameAction(currentPath, currentFiles, selectedIndex, topIndex);
-    } else if (ch == 'l' || ch == KEY_ENTER || ch == '\n' || ch == '\r') {
+    } else if (ch == 'l' || ch == KEY_ENTER || ch == '\n' || ch == '\r' ||
+               ch == KEY_RIGHT) {
       handleEnterDirectoryAction(currentPath, currentFiles, selectedIndex,
                                  topIndex);
-    } else if (ch == 'h') {
+    } else if (ch == 'h' || ch == KEY_LEFT) {
       handleGoBackAction(currentPath, currentFiles, selectedIndex, topIndex);
     } else if (ch == '/') {
       // Enter search mode
