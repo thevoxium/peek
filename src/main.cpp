@@ -1,7 +1,9 @@
 #include "actions.h"
 #include "icons.h"
 #include "utils.h"
+#include <algorithm>
 #include <cstdio>
+#include <filesystem>
 #include <limits.h>
 #include <locale.h>
 #include <ncurses.h>
@@ -10,6 +12,8 @@
 #include <unistd.h>
 #include <utility>
 #include <vector>
+
+namespace fs = std::filesystem;
 
 #define SUBSTR_LEN COLS / 2
 
@@ -74,6 +78,7 @@ int main(int argc, char *argv[]) {
   std::string searchTerm;
   std::vector<int> matchIndices;
   int currentMatchIndex = -1;
+  bool sortByModifiedTime = false; // Flag to track sort state
 
   int ch;
   std::string lastKeyPressed;
@@ -177,7 +182,8 @@ int main(int argc, char *argv[]) {
         int current_col =
             1 + iconVisualWidth + displayName.substr(0, SUBSTR_LEN).length();
         // The selectionAttrs are already on, just fill
-        while (current_col < COLS / 2) {
+        while (current_col <
+               std::min(static_cast<int>(displayName.length()), SUBSTR_LEN)) {
           mvaddch(row, current_col++, ' ');
         }
         attroff(selectionAttrs); // Turn off selection highlight after filling
@@ -258,6 +264,34 @@ int main(int argc, char *argv[]) {
       exitSearchMode(searchTerm, matchIndices, currentMatchIndex);
     } else if (ch == 'y') {
       handleCopyPathAction(currentPath, currentFiles, selectedIndex);
+    } else if (ch == 'm') {
+      // Toggle sort mode
+      sortByModifiedTime = !sortByModifiedTime;
+
+      // Get fresh directory contents
+      currentFiles = getDirectoryContents(currentPath);
+
+      if (sortByModifiedTime) {
+        // Sort by modified time (directories last)
+        std::sort(currentFiles.begin(), currentFiles.end(),
+                  [&currentPath](const auto &a, const auto &b) {
+                    // Directories go last
+                    if (a.second && !b.second)
+                      return false;
+                    if (!a.second && b.second)
+                      return true;
+
+                    // For files, compare modified times
+                    std::string pathA = currentPath + "/" + a.first;
+                    std::string pathB = currentPath + "/" + b.first;
+                    auto timeA = fs::last_write_time(pathA);
+                    auto timeB = fs::last_write_time(pathB);
+                    return timeA > timeB; // Newest first
+                  });
+      }
+      // Reset selection to top
+      selectedIndex = 0;
+      topIndex = 0;
     }
   }
 
