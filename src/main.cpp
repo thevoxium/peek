@@ -203,7 +203,7 @@ int main(int argc, char *argv[]) {
       }
     } else if (ch == 'r') {
       handleRenameAction(currentPath, currentFiles, selectedIndex, topIndex);
-    } else if (ch == 'l') {
+    } else if (ch == 'l' || ch == KEY_ENTER || ch == '\n' || ch == '\r') {
       handleEnterDirectoryAction(currentPath, currentFiles, selectedIndex,
                                  topIndex);
     } else if (ch == 'h') {
