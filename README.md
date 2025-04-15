@@ -27,6 +27,11 @@ brew install ncurses
 brew tap homebrew/cask-fonts
 brew install --cask font-hack-nerd-font
 
+# install
+make
+sudo make install
+peek
+
 # Compile command
 g++ src/main.cpp src/utils.cpp src/actions.cpp -o peek -Wall -Wextra -std=c++17 -lncurses
 
