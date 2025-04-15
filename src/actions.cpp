@@ -266,3 +266,20 @@ void exitSearchMode(std::string &searchTerm, std::vector<int> &matchIndices,
   clrtoeol();
   refresh();
 }
+
+void handleCopyPathAction(
+    const std::string &currentPath,
+    const std::vector<std::pair<std::string, bool>> &currentFiles,
+    int selectedIndex) {
+  if (currentFiles.empty() || selectedIndex >= (int)currentFiles.size()) {
+    return;
+  }
+
+  std::string fullPath =
+      currentPath == "/"
+          ? currentPath + currentFiles[selectedIndex].first
+          : currentPath + "/" + currentFiles[selectedIndex].first;
+
+  std::string command = "printf \"" + fullPath + "\" | pbcopy";
+  int result = system(command.c_str());
+}

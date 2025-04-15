@@ -32,3 +32,8 @@ void navigateToNextMatch(std::vector<int> &matchIndices, int &currentMatchIndex,
 
 void exitSearchMode(std::string &searchTerm, std::vector<int> &matchIndices,
                     int &currentMatchIndex);
+
+void handleCopyPathAction(
+    const std::string &currentPath,
+    const std::vector<std::pair<std::string, bool>> &currentFiles,
+    int selectedIndex);

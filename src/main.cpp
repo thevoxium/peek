@@ -223,6 +223,8 @@ int main(int argc, char *argv[]) {
     } else if (ch == 'e') { // Escape key
       // Exit search mode
       exitSearchMode(searchTerm, matchIndices, currentMatchIndex);
+    } else if (ch == 'y') {
+      handleCopyPathAction(currentPath, currentFiles, selectedIndex);
     }
   }
 
