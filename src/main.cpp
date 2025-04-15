@@ -9,12 +9,10 @@
 #include <cstdio>
 #include <locale.h>
 #include "utils.h"
-#include <filesystem>
-
+#include "actions.h"
 
 #define SUBSTR_LEN 40
 
-namespace fs = std::filesystem;
 
 bool isValidPath(const std::string& path) {
     struct stat buffer;
@@ -152,80 +150,13 @@ currentFiles = getDirectoryContents(currentPath);
                  if (topIndex < 0) topIndex = 0;
             }
         }
-    } else if (ch == 'd'){
-      if (!currentFiles.empty() && selectedIndex < (int)currentFiles.size()){
-        std::string confirmMsg = "Delete?";
-        mvprintw(selectedIndex-topIndex+1, 50, "%s", confirmMsg.c_str());
-        refresh();
-
+    } else if (ch == 'd') {
         inDeleteMode = true;
-
-        int confirm = getch();
-        if(confirm == 'y' || confirm == 'Y'){
-          try{
-            std::string fullPath = currentPath == "/" ? 
-                        currentPath + currentFiles[selectedIndex].first :
-                        currentPath + "/" + currentFiles[selectedIndex].first;
-
-            if (currentFiles[selectedIndex].second){
-              fs::remove_all(fullPath);
-            }else{
-              fs::remove(fullPath);
-            }
-            currentFiles = getDirectoryContents(currentPath);
-            if(selectedIndex >= (int)currentFiles.size()){
-              selectedIndex = currentFiles.size()-1;
-            }
+        if (handleDeleteAction(currentPath, currentFiles, selectedIndex, topIndex)) {
             inDeleteMode = false;
-          } catch(const std::exception& e){
-             mvprintw(LINES/2 + 1, (COLS-30)/2, "Error: Could not delete file, press any key!");
-             inDeleteMode = false;
-             refresh();
-
-             getch(); 
-          }
-        }else{
-          inDeleteMode = false;
         }
-      }
-    } else if (ch == 'r'){
-      if (!currentFiles.empty() && selectedIndex < (int)currentFiles.size()){
-        std::string confirmMsg = "Rename?";
-        mvprintw(selectedIndex-topIndex+1, 50, "%s", confirmMsg.c_str());
-        refresh();
-
-        int confirm = getch();
-        if(confirm == 'y' || confirm == 'Y'){
-          echo(); // Enable echo to see user input
-          curs_set(1); // Show cursor for input
-          mvprintw(selectedIndex-topIndex+2, 50, "New name: ");
-          refresh();
-
-          char newName[256];
-          getnstr(newName, sizeof(newName)-1);
-          noecho(); // Disable echo again
-          curs_set(0); // Hide cursor
-
-          try{
-            std::string fullOldPath = currentPath == "/" ? 
-                        currentPath + currentFiles[selectedIndex].first :
-                        currentPath + "/" + currentFiles[selectedIndex].first;
-            std::string fullNewPath = currentPath == "/" ? 
-                        currentPath + newName :
-                        currentPath + "/" + newName;
-
-            fs::rename(fullOldPath, fullNewPath);
-            currentFiles = getDirectoryContents(currentPath);
-            if(selectedIndex >= (int)currentFiles.size()){
-              selectedIndex = currentFiles.size()-1;
-            }
-          } catch(const std::exception& e){
-             mvprintw(LINES/2 + 1, (COLS-30)/2, "Error: Could not rename, press any key!");
-             refresh();
-             getch();
-          }
-        }
-      }
+    } else if (ch == 'r') {
+        handleRenameAction(currentPath, currentFiles, selectedIndex, topIndex);
     }
   }
 
