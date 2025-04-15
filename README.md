@@ -1,4 +1,7 @@
+
 # peek
+
+![peek demo](assets/img.png)
 
 A simple, fast, work-in-progress (WIP) TUI file browser inspired by `nnn`.
 
@@ -10,14 +13,14 @@ Currently displays the contents of a directory. Navigate with UP/DOWN arrows, qu
 
 *   **Browse Current Directory:**
     ```bash
-    peek
+    ./peek
     ```
 
 *   **Browse Specific Directory:**
     ```bash
-    peek /path/to/directory
+    ./peek /path/to/directory
     ```
 
 ## Status
 
-**[WIP]** 
+**[WIP]**
