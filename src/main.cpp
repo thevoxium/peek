@@ -76,6 +76,8 @@ int main(int argc, char *argv[]) {
   int currentMatchIndex = -1;
 
   int ch;
+  std::string lastKeyPressed;
+  int keyDisplayTimeout = 0;
   while (true) {
 
     if (selectedIndex < 0)
@@ -102,6 +104,17 @@ int main(int argc, char *argv[]) {
         std::string lowerSearchTerm = toLower(searchTerm);
         isSearchMatch =
             (lowerFilename.find(lowerSearchTerm) != std::string::npos);
+      }
+
+      if (!lastKeyPressed.empty()) {
+        move(LINES - 1, COLS - lastKeyPressed.length() - 1);
+        attron(A_DIM);
+        printw("%s", lastKeyPressed.c_str());
+        attroff(A_DIM);
+
+        if (--keyDisplayTimeout <= 0) {
+          lastKeyPressed.clear();
+        }
       }
 
       if (currentFiles[i].second == true) {
@@ -174,6 +187,12 @@ int main(int argc, char *argv[]) {
     refresh();
 
     ch = getch();
+
+    if (ch != ERR) {
+      lastKeyPressed = keyname(ch);
+      keyDisplayTimeout = 10; // Show for 10 refresh cycles
+    }
+
     if (ch == 'q') {
       break;
     } else if (ch == KEY_UP || ch == 'k') {
