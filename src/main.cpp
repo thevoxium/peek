@@ -80,7 +80,6 @@ int main(int argc, char *argv[]) {
       selectedIndex = 0;
     clear();
 
-    mvprintw(0, 1, "%s", ("CWD: " + currentPath).c_str());
     int row = 1;
     for (size_t i = topIndex; i < currentFiles.size() && row < LINES - 1;
          ++i, ++row) {
@@ -178,14 +177,14 @@ int main(int argc, char *argv[]) {
     ch = getch();
     if (ch == 'q') {
       break;
-    } else if (ch == KEY_UP) {
+    } else if (ch == KEY_UP || ch == 'k') {
       if (selectedIndex > 0) {
         selectedIndex--;
         if (selectedIndex < topIndex) {
           topIndex = selectedIndex;
         }
       }
-    } else if (ch == KEY_DOWN) {
+    } else if (ch == KEY_DOWN || ch == 'j') {
       if (!currentFiles.empty() &&
           selectedIndex < (int)currentFiles.size() - 1) {
         selectedIndex++;
@@ -204,6 +203,11 @@ int main(int argc, char *argv[]) {
       }
     } else if (ch == 'r') {
       handleRenameAction(currentPath, currentFiles, selectedIndex, topIndex);
+    } else if (ch == 'l') {
+      handleEnterDirectoryAction(currentPath, currentFiles, selectedIndex,
+                                 topIndex);
+    } else if (ch == 'h') {
+      handleGoBackAction(currentPath, currentFiles, selectedIndex, topIndex);
     }
   }
 
