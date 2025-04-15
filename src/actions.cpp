@@ -1,10 +1,19 @@
 #include "actions.h"
 #include "utils.h"
+#include <algorithm>
+#include <cctype>
 #include <filesystem>
 #include <ncurses.h>
 #include <string>
 
 namespace fs = std::filesystem;
+
+std::string toLower(const std::string &s) {
+  std::string result = s;
+  std::transform(result.begin(), result.end(), result.begin(),
+                 [](unsigned char c) { return std::tolower(c); });
+  return result;
+}
 
 bool handleDeleteAction(const std::string &currentPath,
                         std::vector<std::pair<std::string, bool>> &currentFiles,
@@ -148,4 +157,112 @@ bool handleGoBackAction(std::string &currentPath,
     getch();
     return false;
   }
+}
+
+bool handleSearchAction(std::vector<std::pair<std::string, bool>> &currentFiles,
+                        int &selectedIndex, int &topIndex,
+                        std::string &searchTerm, std::vector<int> &matchIndices,
+                        int &currentMatchIndex) {
+  // Clear previous search results
+  matchIndices.clear();
+  currentMatchIndex = -1;
+
+  // Display search prompt
+  move(LINES - 1, 0);
+  clrtoeol();
+  attron(A_DIM);
+  printw("/");
+  attroff(A_DIM);
+
+  // Enable input
+  echo();
+  curs_set(1);
+
+  // Get search term
+  char input[256] = {0};
+  getnstr(input, sizeof(input) - 1);
+  searchTerm = input;
+
+  // Restore terminal state
+  noecho();
+  curs_set(0);
+
+  if (searchTerm.empty()) {
+    return false;
+  }
+
+  // Convert search term to lowercase for case-insensitive search
+  std::string lowerSearchTerm = toLower(searchTerm);
+
+  // Find all matches
+  for (size_t i = 0; i < currentFiles.size(); ++i) {
+    std::string lowerFilename = toLower(currentFiles[i].first);
+    if (lowerFilename.find(lowerSearchTerm) != std::string::npos) {
+      matchIndices.push_back(i);
+    }
+  }
+
+  // If matches found, navigate to the first one
+  if (!matchIndices.empty()) {
+    currentMatchIndex = 0;
+    selectedIndex = matchIndices[currentMatchIndex];
+
+    // Adjust topIndex if necessary to show the selected item
+    if (selectedIndex < topIndex) {
+      topIndex = selectedIndex;
+    } else if (selectedIndex >= topIndex + LINES - 2) {
+      topIndex = selectedIndex - LINES + 3;
+      if (topIndex < 0)
+        topIndex = 0;
+    }
+
+    return true;
+  }
+
+  // No matches found
+  move(LINES - 1, 0);
+  clrtoeol();
+  attron(A_DIM);
+  printw("Pattern not found: %s", searchTerm.c_str());
+  attroff(A_DIM);
+  refresh();
+  getch(); // Wait for keypress
+
+  return false;
+}
+
+void navigateToNextMatch(std::vector<int> &matchIndices, int &currentMatchIndex,
+                         int &selectedIndex, int &topIndex, int direction) {
+  if (matchIndices.empty()) {
+    return;
+  }
+
+  // Update current match index (wrap around if needed)
+  currentMatchIndex = (currentMatchIndex + direction + matchIndices.size()) %
+                      matchIndices.size();
+
+  // Update selected index to point to the match
+  selectedIndex = matchIndices[currentMatchIndex];
+
+  // Adjust topIndex if necessary to show the selected item
+  if (selectedIndex < topIndex) {
+    topIndex = selectedIndex;
+  } else if (selectedIndex >= topIndex + LINES - 2) {
+    topIndex = selectedIndex - LINES + 3;
+    if (topIndex < 0)
+      topIndex = 0;
+  }
+}
+
+void exitSearchMode(std::string &searchTerm, std::vector<int> &matchIndices,
+                    int &currentMatchIndex) {
+  // Clear search state
+  searchTerm.clear();
+  matchIndices.clear();
+  currentMatchIndex = -1;
+
+  // Clear the status line
+  move(LINES - 1, 0);
+  clrtoeol();
+  refresh();
 }

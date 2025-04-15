@@ -3,24 +3,35 @@
 
 ![peek demo](assets/img.png)
 
-A simple, fast, work-in-progress (WIP) TUI file browser inspired by `nnn`.
+A lightweight, fast terminal file browser.
 
-**DOING THIS BECAUSE MACOS FINDER SUCKS!!**
+> Because MacOS finder sucks
 
 ## Usage
 
-Currently displays the contents of a directory. Navigate with UP/DOWN arrows, quit with 'q'.
+| Key | Action |
+|-----|--------|
+| `↑/k` | Move up |
+| `↓/j` | Move down |
+| `l/Enter` | Open directory/file |
+| `h` | Go to parent directory |
+| `/` | Search mode |
+| `n/N` | Next/previous search match |
+| `r` | Rename file/directory |
+| `d` | Delete file/directory |
+| `q` | Quit |
 
-*   **Browse Current Directory:**
-    ```bash
-    ./peek
-    ```
+```bash
+# Prerequisites
+brew install ncurses
+brew tap homebrew/cask-fonts
+brew install --cask font-hack-nerd-font
 
-*   **Browse Specific Directory:**
-    ```bash
-    ./peek /path/to/directory
-    ```
+# Compile command
+g++ src/main.cpp src/utils.cpp src/actions.cpp -o peek -Wall -Wextra -std=c++17 -lncurses
 
-## Status
+# Browse current directory
+./peek
 
-**[WIP]**
+# Browse specific directory
+./peek /path/to/directory

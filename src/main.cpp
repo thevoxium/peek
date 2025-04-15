@@ -11,7 +11,7 @@
 #include <utility>
 #include <vector>
 
-#define SUBSTR_LEN 40
+#define SUBSTR_LEN 100
 
 bool isValidPath(const std::string &path) {
   struct stat buffer;
@@ -69,6 +69,12 @@ int main(int argc, char *argv[]) {
   std::vector<std::pair<std::string, bool>> currentFiles;
   std::string currentPath = initialPath;
   currentFiles = getDirectoryContents(currentPath);
+
+  // Search-related variables
+  std::string searchTerm;
+  std::vector<int> matchIndices;
+  int currentMatchIndex = -1;
+
   int ch;
   while (true) {
 
@@ -89,6 +95,15 @@ int main(int argc, char *argv[]) {
       bool isSelected = ((int)i == selectedIndex);
       int selectionAttrs = 0;
 
+      bool isSearchMatch = false;
+      // Check if this item is a search match
+      if (!searchTerm.empty()) {
+        std::string lowerFilename = toLower(displayName);
+        std::string lowerSearchTerm = toLower(searchTerm);
+        isSearchMatch =
+            (lowerFilename.find(lowerSearchTerm) != std::string::npos);
+      }
+
       if (currentFiles[i].second == true) {
         iconInfo = ICON_INFO_DIRECTORY;
         if (displayName == ".git") {
@@ -106,6 +121,9 @@ int main(int argc, char *argv[]) {
           selectionAttrs = A_REVERSE | A_DIM;
         }
         attron(selectionAttrs); // Apply selection highlight for the whole line
+      } else if (isSearchMatch) {
+        // Highlight search matches with bold
+        attron(A_BOLD);
       }
 
       // Print Icon: Apply specific color only if NOT selected
@@ -136,41 +154,22 @@ int main(int argc, char *argv[]) {
           mvaddch(row, current_col++, ' ');
         }
         attroff(selectionAttrs); // Turn off selection highlight after filling
-      }
-    }
-    int term_height = LINES;
-    int term_width = COLS;
-    int statusBarRow = term_height - 1;
-    std::string fullPathStatus;
-
-    if (!currentFiles.empty() && selectedIndex >= 0 &&
-        selectedIndex < (int)currentFiles.size()) {
-      if (currentPath == "/") {
-        fullPathStatus = currentPath + currentFiles[selectedIndex].first;
-      } else {
-        fullPathStatus = currentPath + "/" + currentFiles[selectedIndex].first;
-      }
-    } else {
-      fullPathStatus = currentPath;
-      if (!fullPathStatus.empty() && fullPathStatus.back() != '/') {
-        fullPathStatus += "/";
-      }
-      if (currentFiles.empty()) {
-        fullPathStatus += " (empty)";
+      } else if (isSearchMatch) {
+        attroff(A_BOLD); // Turn off bold for search matches
       }
     }
 
-    attron(A_REVERSE | A_DIM);
-    move(statusBarRow, 0);
-    clrtoeol();
-    mvprintw(statusBarRow, 0, "%.*s", term_width, fullPathStatus.c_str());
-    int printedLen = fullPathStatus.length() > (size_t)term_width
-                         ? term_width
-                         : fullPathStatus.length();
-    for (int k = printedLen; k < term_width; ++k) {
-      mvaddch(statusBarRow, k, ' ');
+    attroff(A_REVERSE | A_DIM | A_BOLD);
+
+    // Display search status if in search mode
+    if (!searchTerm.empty() && !matchIndices.empty()) {
+      move(LINES - 1, 0);
+      clrtoeol();
+      attron(A_DIM);
+      printw("/%s (%d/%d)", searchTerm.c_str(), currentMatchIndex + 1,
+             (int)matchIndices.size());
+      attroff(A_DIM);
     }
-    attroff(A_REVERSE | A_DIM);
 
     refresh();
 
@@ -208,6 +207,21 @@ int main(int argc, char *argv[]) {
                                  topIndex);
     } else if (ch == 'h') {
       handleGoBackAction(currentPath, currentFiles, selectedIndex, topIndex);
+    } else if (ch == '/') {
+      // Enter search mode
+      handleSearchAction(currentFiles, selectedIndex, topIndex, searchTerm,
+                         matchIndices, currentMatchIndex);
+    } else if (ch == 'n' && !matchIndices.empty()) {
+      // Navigate to next match
+      navigateToNextMatch(matchIndices, currentMatchIndex, selectedIndex,
+                          topIndex, 1);
+    } else if (ch == 'N' && !matchIndices.empty()) {
+      // Navigate to previous match
+      navigateToNextMatch(matchIndices, currentMatchIndex, selectedIndex,
+                          topIndex, -1);
+    } else if (ch == 'e') { // Escape key
+      // Exit search mode
+      exitSearchMode(searchTerm, matchIndices, currentMatchIndex);
     }
   }
 
