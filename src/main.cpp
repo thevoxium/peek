@@ -1,19 +1,15 @@
-#include "actions.h"
 #include "icons.h"
+#include "key_actions.h"
 #include "utils.h"
 #include <algorithm>
 #include <cstdio>
-#include <filesystem>
 #include <limits.h>
-#include <locale.h>
 #include <ncurses.h>
 #include <string>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <utility>
 #include <vector>
-
-namespace fs = std::filesystem;
 
 #define SUBSTR_LEN COLS / 2
 
@@ -177,104 +173,9 @@ int main(int argc, char *argv[]) {
       keyDisplayTimeout = 10; // Show for 10 refresh cycles
     }
 
-    if (ch == 'q') {
-      break;
-    } else if (ch == KEY_UP || ch == 'k') {
-      if (selectedIndex > 0) {
-        selectedIndex--;
-        if (selectedIndex < topIndex) {
-          topIndex = selectedIndex;
-        }
-      }
-    } else if (ch == KEY_DOWN || ch == 'j') {
-      if (!currentFiles.empty() &&
-          selectedIndex < (int)currentFiles.size() - 1) {
-        selectedIndex++;
-        if (selectedIndex >= topIndex + LINES - 2) {
-          topIndex =
-              selectedIndex - LINES + 3; // Adjusted slightly for status bar
-          if (topIndex < 0)
-            topIndex = 0;
-        }
-      }
-    } else if (ch == 'd') {
-      inDeleteMode = true;
-      if (handleDeleteAction(currentPath, currentFiles, selectedIndex,
-                             topIndex)) {
-        inDeleteMode = false;
-      }
-    } else if (ch == 'r') {
-      handleRenameAction(currentPath, currentFiles, selectedIndex, topIndex);
-    } else if (ch == 'l' || ch == KEY_ENTER || ch == '\n' || ch == '\r' ||
-               ch == KEY_RIGHT) {
-      handleEnterDirectoryAction(currentPath, currentFiles, selectedIndex,
-                                 topIndex);
-    } else if (ch == 'h' || ch == KEY_LEFT) {
-      handleGoBackAction(currentPath, currentFiles, selectedIndex, topIndex);
-    } else if (ch == '/') {
-      // Enter search mode
-      handleSearchAction(currentFiles, selectedIndex, topIndex, searchTerm,
-                         matchIndices, currentMatchIndex);
-    } else if (ch == 'n' && !matchIndices.empty()) {
-      // Navigate to next match
-      navigateToNextMatch(matchIndices, currentMatchIndex, selectedIndex,
-                          topIndex, 1);
-    } else if (ch == 'N' && !matchIndices.empty()) {
-      // Navigate to previous match
-      navigateToNextMatch(matchIndices, currentMatchIndex, selectedIndex,
-                          topIndex, -1);
-    } else if (ch == 'e') { // Escape key
-      // Exit search mode
-      exitSearchMode(searchTerm, matchIndices, currentMatchIndex);
-    } else if (ch == 'y') {
-      handleCopyPathAction(currentPath, currentFiles, selectedIndex);
-    } else if (ch == 'm') {
-      // Toggle sort mode
-      toggleSortAndRefresh(currentFiles, currentPath, sortByModifiedTime,
-                           selectedIndex, topIndex);
-
-    } else if (ch == '[') {
-      // Add current directory to bookmarks
-      addBookmark(currentPath);
-
-      // Show confirmation message
-      move(LINES - 1, 0);
-      clrtoeol();
-      attron(A_DIM);
-      printw("Bookmark added: %s", currentPath.c_str());
-      attroff(A_DIM);
-      refresh();
-    } else if (ch == ']') {
-      // Remove current directory from bookmarks
-      bool removed = removeBookmark(currentPath);
-
-      // Show confirmation message
-      move(LINES - 1, 0);
-      clrtoeol();
-      attron(A_DIM);
-      if (removed) {
-        printw("Bookmark removed: %s", currentPath.c_str());
-      } else {
-        printw("Not bookmarked: %s", currentPath.c_str());
-      }
-      attroff(A_DIM);
-      refresh();
-    } else if (ch == 'b') {
-      // Show bookmarks list
-      handleBookmarkListAction(currentPath, currentFiles, selectedIndex,
-                               topIndex);
-    } else if (ch == 'o') {
-
-      if (currentFiles[selectedIndex].second == true || currentFiles.empty() ||
-          selectedIndex >= (int)currentFiles.size()) {
-        refresh();
-      } else {
-
-        std::string command =
-            "open -a \"Brave Browser\" \"" + BUILD_FULL_PATH + "\"";
-        int result = system(command.c_str());
-      }
-    }
+    handleKeyPress(ch, currentPath, currentFiles, selectedIndex, topIndex,
+                   inDeleteMode, sortByModifiedTime, searchTerm, matchIndices,
+                   currentMatchIndex);
   }
 
   endwin();

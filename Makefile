@@ -2,7 +2,7 @@ CXX = g++
 CXXFLAGS = -std=c++17 -Wall -Wextra -O2
 LDFLAGS = -lncurses
 TARGET = peek
-SRC = src/main.cpp src/actions.cpp src/utils.cpp
+SRC = src/main.cpp src/actions.cpp src/utils.cpp src/key_actions.cpp
 OBJ = $(SRC:.cpp=.o)
 
 all: $(TARGET)
