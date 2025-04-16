@@ -45,3 +45,8 @@ bool handleBookmarkListAction(
     std::string &currentPath,
     std::vector<std::pair<std::string, bool>> &currentFiles, int &selectedIndex,
     int &topIndex);
+
+void toggleSortAndRefresh(
+    std::vector<std::pair<std::string, bool>> &currentFiles,
+    std::string &currentPath, bool &sortByModifiedTime, int &selectedIndex,
+    int &topIndex);

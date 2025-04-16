@@ -434,3 +434,36 @@ bool handleBookmarkListAction(
 
   return false;
 }
+
+void toggleSortAndRefresh(
+    std::vector<std::pair<std::string, bool>> &currentFiles,
+    std::string &currentPath, bool &sortByModifiedTime, int &selectedIndex,
+    int &topIndex) {
+  sortByModifiedTime = !sortByModifiedTime;
+
+  // Get fresh directory contents
+  currentFiles = getDirectoryContents(currentPath);
+
+  if (sortByModifiedTime) {
+    // Sort by modified time (directories last)
+    std::sort(currentFiles.begin(), currentFiles.end(),
+              [&currentPath](const auto &a, const auto &b) {
+                // Directories go last
+                if (a.second && !b.second)
+                  return false;
+                if (!a.second && b.second)
+                  return true;
+
+                // For files, compare modified times
+                std::string pathA = currentPath + "/" + a.first;
+                std::string pathB = currentPath + "/" + b.first;
+                auto timeA = fs::last_write_time(pathA);
+                auto timeB = fs::last_write_time(pathB);
+                return timeA > timeB; // Newest first
+              });
+  }
+
+  // Reset selection to top
+  selectedIndex = 0;
+  topIndex = 0;
+}

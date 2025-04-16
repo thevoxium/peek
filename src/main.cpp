@@ -27,30 +27,34 @@ int main(int argc, char *argv[]) {
   NCURSES_SET_BASICS;
   NCURSES_COLOR_SET;
 
+  // Navigation variables
   int selectedIndex = 0;
   int topIndex = 0;
+
+  // File management variables
   bool inDeleteMode = false;
-  std::vector<std::pair<std::string, bool>> currentFiles;
   std::string currentPath = initialPath;
+  std::vector<std::pair<std::string, bool>> currentFiles;
   currentFiles = getDirectoryContents(currentPath);
 
   // Search-related variables
   std::string searchTerm;
   std::vector<int> matchIndices;
   int currentMatchIndex = -1;
-  bool sortByModifiedTime = false; // Flag to track sort state
 
-  int ch;
+  // Display and sorting variables
+  bool sortByModifiedTime = false; // Flag to track sort state
   std::string lastKeyPressed;
   int keyDisplayTimeout = 0;
+  int ch;
+
   while (true) {
 
-    if (selectedIndex < 0)
+    if (selectedIndex < 0 || currentFiles.empty())
       selectedIndex = 0;
     if (!currentFiles.empty() && selectedIndex >= currentFiles.size())
       selectedIndex = currentFiles.size() - 1;
-    if (currentFiles.empty())
-      selectedIndex = 0;
+
     clear();
 
     int row = 1;
@@ -226,32 +230,9 @@ int main(int argc, char *argv[]) {
       handleCopyPathAction(currentPath, currentFiles, selectedIndex);
     } else if (ch == 'm') {
       // Toggle sort mode
-      sortByModifiedTime = !sortByModifiedTime;
+      toggleSortAndRefresh(currentFiles, currentPath, sortByModifiedTime,
+                           selectedIndex, topIndex);
 
-      // Get fresh directory contents
-      currentFiles = getDirectoryContents(currentPath);
-
-      if (sortByModifiedTime) {
-        // Sort by modified time (directories last)
-        std::sort(currentFiles.begin(), currentFiles.end(),
-                  [&currentPath](const auto &a, const auto &b) {
-                    // Directories go last
-                    if (a.second && !b.second)
-                      return false;
-                    if (!a.second && b.second)
-                      return true;
-
-                    // For files, compare modified times
-                    std::string pathA = currentPath + "/" + a.first;
-                    std::string pathB = currentPath + "/" + b.first;
-                    auto timeA = fs::last_write_time(pathA);
-                    auto timeB = fs::last_write_time(pathB);
-                    return timeA > timeB; // Newest first
-                  });
-      }
-      // Reset selection to top
-      selectedIndex = 0;
-      topIndex = 0;
     } else if (ch == '[') {
       // Add current directory to bookmarks
       addBookmark(currentPath);
