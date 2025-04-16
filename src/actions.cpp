@@ -30,11 +30,7 @@ bool handleDeleteAction(const std::string &currentPath,
   int confirm = getch();
   if (confirm == 'y' || confirm == 'Y') {
     try {
-      std::string fullPath =
-          currentPath == "/"
-              ? currentPath + currentFiles[selectedIndex].first
-              : currentPath + "/" + currentFiles[selectedIndex].first;
-
+      std::string fullPath = BUILD_FULL_PATH;
       if (currentFiles[selectedIndex].second) {
         fs::remove_all(fullPath);
       } else {
@@ -79,10 +75,8 @@ bool handleRenameAction(const std::string &currentPath,
     curs_set(0); // Hide cursor
 
     try {
-      std::string fullOldPath =
-          currentPath == "/"
-              ? currentPath + currentFiles[selectedIndex].first
-              : currentPath + "/" + currentFiles[selectedIndex].first;
+      std::string fullOldPath = BUILD_FULL_PATH;
+
       std::string fullNewPath = currentPath == "/"
                                     ? currentPath + newName
                                     : currentPath + "/" + newName;
@@ -113,11 +107,7 @@ bool handleEnterDirectoryAction(
   }
 
   try {
-    std::string newPath =
-        currentPath == "/"
-            ? currentPath + currentFiles[selectedIndex].first
-            : currentPath + "/" + currentFiles[selectedIndex].first;
-
+    std::string newPath = BUILD_FULL_PATH;
     currentPath = newPath;
     currentFiles = getDirectoryContents(currentPath);
     selectedIndex = 0;
@@ -275,11 +265,7 @@ void handleCopyPathAction(
     return;
   }
 
-  std::string fullPath =
-      currentPath == "/"
-          ? currentPath + currentFiles[selectedIndex].first
-          : currentPath + "/" + currentFiles[selectedIndex].first;
-
+  std::string fullPath = BUILD_FULL_PATH;
   std::string command = "printf \"" + fullPath + "\" | pbcopy";
   int result = system(command.c_str());
 }

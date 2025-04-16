@@ -322,6 +322,17 @@ int main(int argc, char *argv[]) {
       // Show bookmarks list
       handleBookmarkListAction(currentPath, currentFiles, selectedIndex,
                                topIndex);
+    } else if (ch == 'o') {
+
+      if (currentFiles[selectedIndex].second == true || currentFiles.empty() ||
+          selectedIndex >= (int)currentFiles.size()) {
+        refresh();
+      } else {
+
+        std::string command =
+            "open -a \"Brave Browser\" \"" + BUILD_FULL_PATH + "\"";
+        int result = system(command.c_str());
+      }
     }
   }
 
