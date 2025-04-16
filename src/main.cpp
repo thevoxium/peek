@@ -17,55 +17,15 @@ namespace fs = std::filesystem;
 
 #define SUBSTR_LEN COLS / 2
 
-bool isValidPath(const std::string &path) {
-  struct stat buffer;
-  return (stat(path.c_str(), &buffer) == 0);
-}
-
 int main(int argc, char *argv[]) {
+
   std::string initialPath;
-  if (argc == 1) {
-    char cwd_buffer[PATH_MAX];
-    if (getcwd(cwd_buffer, sizeof(cwd_buffer)) != NULL) {
-      initialPath = cwd_buffer;
-    } else {
-      perror("peek: Error getting current working directory");
-      return 1;
-    }
-  } else if (argc == 2) {
-    initialPath = argv[1];
-    if (!isValidPath(initialPath)) {
-      fprintf(stderr, "peek: Invalid path: %s\n", initialPath.c_str());
-      return 1;
-    }
-  } else {
-    fprintf(stderr, "Usage: %s [<directory_path>]\n", argv[0]);
+  if (parseInitialPath(argc, argv, initialPath) != 0) {
     return 1;
   }
 
-  setlocale(LC_ALL, "");
-  initscr();
-  noecho();
-  cbreak();
-  if (has_colors()) {
-    start_color();
-    use_default_colors();
-    init_pair(1, COLOR_RED, -1); // Reserved for delete mode highlight
-    // Initialize color pairs based on defines in icons.h
-    init_pair(PAIR_DIRECTORY, COLOR_BLUE, -1);
-    init_pair(PAIR_IMAGE, COLOR_MAGENTA, -1);
-    init_pair(PAIR_VIDEO, COLOR_CYAN, -1);
-    init_pair(PAIR_AUDIO, COLOR_YELLOW, -1);
-    init_pair(PAIR_ARCHIVE, COLOR_RED, -1);
-    init_pair(PAIR_CODE, COLOR_GREEN, -1);
-    init_pair(PAIR_TEXT, COLOR_WHITE, -1);
-    init_pair(PAIR_CONFIG, COLOR_YELLOW, -1);
-    init_pair(PAIR_EXECUTABLE, COLOR_GREEN, -1);
-    init_pair(PAIR_GIT, COLOR_RED, -1);
-    // Add more init_pair calls if more PAIR_XXX constants exist
-  }
-  keypad(stdscr, TRUE);
-  curs_set(0);
+  NCURSES_SET_BASICS;
+  NCURSES_COLOR_SET;
 
   int selectedIndex = 0;
   int topIndex = 0;

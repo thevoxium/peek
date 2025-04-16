@@ -58,3 +58,29 @@ std::string getFormattedModTime(const std::string &path) {
     return "";
   }
 }
+
+bool isValidPath(const std::string &path) {
+  struct stat buffer;
+  return (stat(path.c_str(), &buffer) == 0);
+}
+int parseInitialPath(int argc, char *argv[], std::string &initialPath) {
+  if (argc == 1) {
+    char cwd_buffer[PATH_MAX];
+    if (getcwd(cwd_buffer, sizeof(cwd_buffer)) != NULL) {
+      initialPath = cwd_buffer;
+    } else {
+      perror("peek: Error getting current working directory");
+      return 1;
+    }
+  } else if (argc == 2) {
+    initialPath = argv[1];
+    if (!isValidPath(initialPath)) {
+      fprintf(stderr, "peek: Invalid path: %s\n", initialPath.c_str());
+      return 1;
+    }
+  } else {
+    fprintf(stderr, "Usage: %s [<directory_path>]\n", argv[0]);
+    return 1;
+  }
+  return 0;
+}

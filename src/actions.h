@@ -5,11 +5,6 @@
 #include <utility>
 #include <vector>
 
-#define BUILD_FULL_PATH                                                        \
-  ((currentPath == "/")                                                        \
-       ? (currentPath + currentFiles[selectedIndex].first)                     \
-       : (currentPath + "/" + currentFiles[selectedIndex].first))
-
 bool handleDeleteAction(const std::string &currentPath,
                         std::vector<std::pair<std::string, bool>> &currentFiles,
                         int &selectedIndex, int topIndex);
