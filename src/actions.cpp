@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
+#include <fstream>
 #include <ncurses.h>
 #include <string>
 
@@ -266,7 +267,6 @@ void exitSearchMode(std::string &searchTerm, std::vector<int> &matchIndices,
   clrtoeol();
   refresh();
 }
-
 void handleCopyPathAction(
     const std::string &currentPath,
     const std::vector<std::pair<std::string, bool>> &currentFiles,
@@ -282,4 +282,169 @@ void handleCopyPathAction(
 
   std::string command = "printf \"" + fullPath + "\" | pbcopy";
   int result = system(command.c_str());
+}
+
+std::string getBookmarksFilePath() {
+  std::string homeDir = getenv("HOME") ? getenv("HOME") : ".";
+  return homeDir + "/.peek_bookmarks";
+}
+
+void addBookmark(const std::string &path) {
+  std::string bookmarksFile = getBookmarksFilePath();
+
+  std::vector<std::string> bookmarks = getBookmarks();
+
+  if (std::find(bookmarks.begin(), bookmarks.end(), path) != bookmarks.end()) {
+    return; // Already bookmarked
+  }
+
+  std::ofstream file(bookmarksFile, std::ios::app);
+  if (file.is_open()) {
+    file << path << std::endl;
+    file.close();
+  }
+}
+
+bool removeBookmark(const std::string &path) {
+  std::string bookmarksFile = getBookmarksFilePath();
+  std::vector<std::string> bookmarks = getBookmarks();
+
+  auto it = std::find(bookmarks.begin(), bookmarks.end(), path);
+  if (it == bookmarks.end()) {
+    return false; // Not found
+  }
+
+  bookmarks.erase(it);
+
+  std::ofstream file(bookmarksFile, std::ios::trunc);
+  if (file.is_open()) {
+    for (const auto &bookmark : bookmarks) {
+      file << bookmark << std::endl;
+    }
+    file.close();
+    return true;
+  }
+  return false;
+}
+
+std::vector<std::string> getBookmarks() {
+  std::string bookmarksFile = getBookmarksFilePath();
+  std::vector<std::string> bookmarks;
+
+  std::ifstream file(bookmarksFile);
+  if (file.is_open()) {
+    std::string line;
+    while (std::getline(file, line)) {
+      if (!line.empty()) {
+        bookmarks.push_back(line);
+      }
+    }
+    file.close();
+  }
+
+  return bookmarks;
+}
+
+bool handleBookmarkListAction(
+    std::string &currentPath,
+    std::vector<std::pair<std::string, bool>> &currentFiles, int &selectedIndex,
+    int &topIndex) {
+  std::vector<std::string> bookmarks = getBookmarks();
+
+  if (bookmarks.empty()) {
+    mvprintw(LINES / 2, (COLS - 20) / 2, "No bookmarks found");
+    refresh();
+    getch();
+    return false;
+  }
+
+  int bookmarkIndex = 0;
+  int bookmarkTopIndex = 0;
+
+  while (true) {
+    clear();
+
+    mvprintw(0, 0, "Bookmarks (q to exit, Enter to select, ] to delete):");
+
+    int row = 2;
+    for (size_t i = bookmarkTopIndex; i < bookmarks.size() && row < LINES - 1;
+         ++i, ++row) {
+      if ((int)i == bookmarkIndex) {
+        attron(A_REVERSE);
+      }
+
+      mvprintw(row, 1, "%s", bookmarks[i].c_str());
+
+      if ((int)i == bookmarkIndex) {
+        attroff(A_REVERSE);
+      }
+    }
+
+    refresh();
+
+    int ch = getch();
+
+    if (ch == 'q') {
+      break;
+    } else if (ch == KEY_UP || ch == 'k') {
+      if (bookmarkIndex > 0) {
+        bookmarkIndex--;
+        if (bookmarkIndex < bookmarkTopIndex) {
+          bookmarkTopIndex = bookmarkIndex;
+        }
+      }
+    } else if (ch == KEY_DOWN || ch == 'j') {
+      if (bookmarkIndex < (int)bookmarks.size() - 1) {
+        bookmarkIndex++;
+        if (bookmarkIndex >= bookmarkTopIndex + LINES - 3) {
+          bookmarkTopIndex = bookmarkIndex - LINES + 4;
+        }
+      }
+    } else if (ch == KEY_ENTER || ch == '\n' || ch == '\r') {
+      if (!bookmarks.empty() && bookmarkIndex < (int)bookmarks.size()) {
+        std::string selectedPath = bookmarks[bookmarkIndex];
+
+        if (fs::exists(selectedPath)) {
+          currentPath = selectedPath;
+          currentFiles = getDirectoryContents(currentPath);
+          selectedIndex = 0;
+          topIndex = 0;
+          return true;
+        } else {
+          mvprintw(LINES - 1, 0,
+                   "Path no longer exists. Delete bookmark? (y/n)");
+          refresh();
+
+          int confirm = getch();
+          if (confirm == 'y' || confirm == 'Y') {
+            removeBookmark(selectedPath);
+            bookmarks = getBookmarks();
+            if (bookmarkIndex >= (int)bookmarks.size()) {
+              bookmarkIndex = bookmarks.size() - 1;
+              if (bookmarkIndex < 0)
+                bookmarkIndex = 0;
+            }
+          }
+        }
+      }
+    } else if (ch == ']') {
+      if (!bookmarks.empty() && bookmarkIndex < (int)bookmarks.size()) {
+        mvprintw(LINES - 1, 0, "Delete bookmark? (y/n)");
+        refresh();
+
+        int confirm = getch();
+        if (confirm == 'y' || confirm == 'Y') {
+          removeBookmark(bookmarks[bookmarkIndex]);
+          bookmarks = getBookmarks();
+          if (bookmarkIndex >= (int)bookmarks.size()) {
+            bookmarkIndex = bookmarks.size() - 1;
+            if (bookmarkIndex < 0)
+              bookmarkIndex = 0;
+          }
+        }
+      }
+    }
+  }
+
+  return false;
 }

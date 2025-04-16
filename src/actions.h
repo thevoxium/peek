@@ -37,3 +37,11 @@ void handleCopyPathAction(
     const std::string &currentPath,
     const std::vector<std::pair<std::string, bool>> &currentFiles,
     int selectedIndex);
+
+void addBookmark(const std::string &path);
+bool removeBookmark(const std::string &path);
+std::vector<std::string> getBookmarks();
+bool handleBookmarkListAction(
+    std::string &currentPath,
+    std::vector<std::pair<std::string, bool>> &currentFiles, int &selectedIndex,
+    int &topIndex);

@@ -292,6 +292,36 @@ int main(int argc, char *argv[]) {
       // Reset selection to top
       selectedIndex = 0;
       topIndex = 0;
+    } else if (ch == '[') {
+      // Add current directory to bookmarks
+      addBookmark(currentPath);
+
+      // Show confirmation message
+      move(LINES - 1, 0);
+      clrtoeol();
+      attron(A_DIM);
+      printw("Bookmark added: %s", currentPath.c_str());
+      attroff(A_DIM);
+      refresh();
+    } else if (ch == ']') {
+      // Remove current directory from bookmarks
+      bool removed = removeBookmark(currentPath);
+
+      // Show confirmation message
+      move(LINES - 1, 0);
+      clrtoeol();
+      attron(A_DIM);
+      if (removed) {
+        printw("Bookmark removed: %s", currentPath.c_str());
+      } else {
+        printw("Not bookmarked: %s", currentPath.c_str());
+      }
+      attroff(A_DIM);
+      refresh();
+    } else if (ch == 'b') {
+      // Show bookmarks list
+      handleBookmarkListAction(currentPath, currentFiles, selectedIndex,
+                               topIndex);
     }
   }
 
