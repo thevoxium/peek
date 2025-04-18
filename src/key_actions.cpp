@@ -1,6 +1,34 @@
 #include "key_actions.h"
 #include "actions.h"
+#include <fstream>
 #include <ncurses.h>
+#include <unordered_map>
+
+// Load application list from config file.
+static std::unordered_map<std::string, std::string> loadAppList() {
+  std::unordered_map<std::string, std::string> m;
+  std::ifstream file("../app_list.txt");
+  if (!file.is_open())
+    return m;
+  std::string line;
+  while (std::getline(file, line)) {
+    if (line.empty() || line[0] == '#')
+      continue;
+    auto pos = line.find('=');
+    if (pos == std::string::npos)
+      continue;
+    std::string ext = line.substr(0, pos);
+    std::string app = line.substr(pos + 1);
+    m[ext] = app;
+  }
+  return m;
+}
+
+// Singleton accessor for the extension→app map.
+static const std::unordered_map<std::string, std::string> &getAppMap() {
+  static const auto map = loadAppList();
+  return map;
+}
 
 #define BUILD_FULL_PATH                                                        \
   ((currentPath == "/")                                                        \
@@ -79,40 +107,32 @@ void handleKeyPress(int ch, std::string &currentPath,
     break;
   case 'N':
     if (!matchIndices.empty())
-      navigateToNextMatch(matchIndices, currentMatchIndex, selectedIndex,
-                          topIndex, -1);
+    case 'o':
+      if (!currentFiles.empty() && selectedIndex < (int)currentFiles.size() &&
+          !currentFiles[selectedIndex].second) {
+        std::string fullPath = BUILD_FULL_PATH;
+        auto dotPos = fullPath.find_last_of('.');
+        std::string ext;
+        if (dotPos != std::string::npos)
+          ext = fullPath.substr(dotPos + 1);
+        const auto &appMap = getAppMap();
+        // Default to Brave Browser if no mapping found
+        std::string app = "Brave Browser";
+        auto it = appMap.find(ext);
+        if (it != appMap.end())
+          app = it->second;
+        std::string command = "open -a \"" + app + "\" \"" + fullPath + "\"";
+        system(command.c_str());
+      } else {
+        refresh();
+      }
     break;
-  case 'e':
-    exitSearchMode(searchTerm, matchIndices, currentMatchIndex);
-    break;
-  case 'y':
-    handleCopyPathAction(currentPath, currentFiles, selectedIndex);
-    break;
-  case 'm':
-    toggleSortAndRefresh(currentFiles, currentPath, sortByModifiedTime,
-                         selectedIndex, topIndex);
-    break;
-  case '[':
-    addBookmark(currentPath);
-    refresh();
-    break;
-  case ']':
     removeBookmark(currentPath);
     refresh();
     break;
   case 'b':
     handleBookmarkListAction(currentPath, currentFiles, selectedIndex,
                              topIndex);
-    break;
-  case 'o':
-    if (!currentFiles.empty() && selectedIndex < (int)currentFiles.size() &&
-        !currentFiles[selectedIndex].second) {
-      std::string command =
-          "open -a \"Brave Browser\" \"" + BUILD_FULL_PATH + "\"";
-      int result = system(command.c_str());
-    } else {
-      refresh();
-    }
     break;
   }
 }

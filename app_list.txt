@@ -1,0 +1,6 @@
+# Extension-to-application mappings
+# Format: extension=Application Name
+mp4=VLC
+mkv=VLC
+pdf=Brave Browser
+
